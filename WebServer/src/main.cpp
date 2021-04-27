@@ -1,4 +1,5 @@
 #include <Arduino.h>
+
 #include <ESP8266WiFi.h>
 #include <ESP8266WebServer.h>
 
@@ -17,29 +18,25 @@ ESP8266WebServer webServer;
 
 void setup() {
   // put your setup code here, to run once:
-
-  Serial.begin(9600);
   pinMode(LED_GPIO, OUTPUT);
+  Serial.begin(9600);
 
-  /* Connect to WIFI */
+  /* Connecting to WIFI */
   WiFi.mode(WIFI_STA);
   WiFi.begin(SSID_NAME, SSID_PASSWORD);
-
-  while (WiFi.status() != WL_CONNECTED)
-  {
+  while (WiFi.status() != WL_CONNECTED) {
     delay(500);
     Serial.print(".");
   }
-
   Serial.println();
 
-  /* WIFI connected */
+  /* WIFI Connected */
   Serial.print("WIFI connected : ");
   Serial.print(WiFi.SSID());
   Serial.print(", IP :");
   Serial.println(WiFi.localIP());
 
-  /* ESP8266 Web Server */
+  /* Web Server */
   Serial.println("Starting web server.");
   webServer.begin(80);
   webServer.on("/", onHomePage);
