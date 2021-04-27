@@ -2,9 +2,7 @@
 #include "ESP8266WiFi.h"
 #include "ESP8266WebServer.h"
 
-// #define SSID_NAME "LIANG_RT-AC86U"
-// #define SSID_PASSWORD "7562614990"
-#define SSID_NAME "1701_2.4G"
+#define SSID_NAME "ESP8266"
 #define SSID_PASSWORD "12345678"
 
 ESP8266WebServer webServer;
