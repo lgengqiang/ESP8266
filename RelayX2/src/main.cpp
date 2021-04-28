@@ -24,6 +24,8 @@
 
 String ssidName;
 String ssidPassword;
+String relayADisplayName;
+String relayBDisplayName;
 int deviceState = DEVICE_STATE_INIT;
 int relayAState = RELAY_STATE_DEFAULT;
 int relayBState = RELAY_STATE_DEFAULT;
@@ -46,7 +48,7 @@ void writeRelayA(int state);
 void writeRelayB(int state);
 
 bool loadWifiConfig(void);
-bool saveWifiConfig(String ssid, String pasword);
+bool saveWifiConfig(String ssid, String pasword, String displayNameA, String displayNameB);
 
 void enterWifiRelayMode(void);
 void enterWifiConfigMode(void);
@@ -240,20 +242,40 @@ bool loadWifiConfig(void) {
     return false;
   }
 
-  String str = file.readString();
+  String cfg = file.readString();
   file.close();
 
-  int index = str.indexOf("\r\n");
-  if (index != -1) {
-    ssidName = str.substring(0, index);
-    ssidPassword = str.substring(index + 2, str.length());
-    return true;
-  } else {
+  int index = cfg.indexOf("\r\n");
+  ssidName = cfg.substring(0, index);
+  cfg.remove(0, index + 3);
+
+  index = cfg.indexOf("\r\n");
+  ssidPassword = cfg.substring(0, index);
+  cfg.remove(0, index + 3);
+
+  index = cfg.indexOf("\r\n");
+  relayADisplayName = cfg.substring(0, index);
+  cfg.remove(0, index + 3);
+
+  index = cfg.indexOf("\r\n");
+  relayBDisplayName = cfg.substring(0, index);
+
+  if (ssidName.isEmpty() || ssidPassword.isEmpty() || relayADisplayName.isEmpty() || relayBDisplayName.is()) {
     return false;
   }
+
+  return true;
+  // int index = cfg.indexOf("\r\n");
+  // if (index != -1) {
+  //   ssidName = cfg.substring(0, index);
+  //   ssidPassword = cfg.substring(index + 2, cfg.length());
+  //   return true;
+  // } else {
+  //   return false;
+  // }
 }
 
-bool saveWifiConfig(String ssid, String pasword) {
+bool saveWifiConfig(String ssid, String pasword, String displayNameA, String displayNameB) {
   File file = LittleFS.open("/wifi.cfg", "w");
   if (!file) {
     Serial.println("Failed to write WIFI config file.");
@@ -261,7 +283,9 @@ bool saveWifiConfig(String ssid, String pasword) {
   }
   
   file.println(ssid);
-  file.print(pasword);
+  file.println(pasword);
+  file.println(displayNameA);
+  file.print(displayNameB);
   file.flush();
   file.close();
   return true;
@@ -285,7 +309,7 @@ void onConfigApplyPage(void) {
     return;
   }
 
-  if (!webserver.hasArg("SSID") || !webserver.hasArg("Password")) {
+  if (!webserver.hasArg("SSID") || !webserver.hasArg("Password") || !webserver.hasArg("DisplayNameA") || !webserver.hasArg("DisplayNameB")) {
     Serial.println("[Web_CFG] Arguments does not valid.");
     webserver.send(404, "text/plain", "Method not allow");
     return;
@@ -293,8 +317,10 @@ void onConfigApplyPage(void) {
 
   ssidName = webserver.arg("SSID");
   ssidPassword = webserver.arg("Password");
+  relayADisplayName = webserver.arg("DisplayNameA");
+  relayBDisplayName = webserver.arg("DisplayNameB");
   Serial.printf("SSID: %s, Password: %s\r\n", ssidName.c_str(), ssidPassword.c_str());
-  saveWifiConfig(ssidName, ssidPassword);
+  saveWifiConfig(ssidName, ssidPassword, relayADisplayName, relayBDisplayName);
 
   webserver.send(200, "text/html", buildRedirectHtml());
 
