@@ -3,19 +3,51 @@
 
 <head>
     <title>ESP8266's 2-Channel Relays</title>
+    <style>
+        .h1 {
+            font-size: 32px;
+            text-align: center;
+        }
+        .div1 {
+            background-color: #04AA6D;
+            margin: auto;
+            text-align: center;
+            width: 25%;
+        }
+        .div2 {
+            padding: 15px 0;
+        }
+        .button {
+            color: white;
+            display: inline-block;
+            text-decoration: none;
+        }
+    </style>
 </head>
 
 <body style="background-color: GhostWhite;">
-    <h1 style="font-size: 32px; text-align: center;">WIFI Relays</h1>
-    <div style="margin: auto; text-align: center; width: 25%; height: 50px; background-color: Moccasin;">
-        <p style="display: inline-block;"><a href="/relay_b_off">Relay A
-                ON</a></p>
+    <h1 class="h1">WIFI Relays</h1>
+
+    <div class="div1">
+        <div class="div2">
+            <a class="button" href="/relay">
+                <div>Relay A</div>
+                <div>ON</div>
+            </a>
+        </div>
     </div>
+
     <div style="height: 25px;"></div>
-    <div style="margin: auto; text-align: center; width: 25%; height: 50px; background-color: Moccasin;">
-        <p style="display: inline-block;"><a href="/relay_b_off">Relay B
-                OFF</a></p>
+
+    <div class="div1">
+        <div class="div2">
+            <a class="button" href="/relay">
+                <div>Relay B</div>
+                <div>OFF</div>
+            </a>
+        </div>
     </div>
+
 </body>
 
 </html>
