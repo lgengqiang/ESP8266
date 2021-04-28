@@ -6,6 +6,8 @@
 #include "FS.h"
 #include "LittleFS.h"
 
+#include "resource.h"
+
 #define BUTTON_GPIO D3
 #define LED_STATE_GPIO LED_BUILTIN_AUX
 #define RELAY_A_GPIO D5
@@ -133,8 +135,10 @@ void misc_init(void) {
 
 void ICACHE_RAM_ATTR onButtonPressed(void) {
   if (deviceState != DEVICE_STATE_CONFIG) {
-    Serial.println("Button pressed. Switch to WIFI_CONFIG mode.");
+//    Serial.println("Button pressed. Switch to WIFI_CONFIG mode.");
 //    switchToWifiConfigMode();
+
+    Serial.println("Button pressed. Clear SSID configuration.");
     if (LittleFS.exists("/wifi.cfg")) {
       LittleFS.remove("/wifi.cfg");
       ESP.restart();
@@ -329,58 +333,20 @@ void onRelayBOff(void) {
 }
 
 String buildHomePageHtml(void) {
-  String str = "<!DOCTYPE html>";
-  str += "<html>";
-  str += "<head>";
-  str += "<title>ESP8266's 2-Channel Relays</title>";
-  str += "</head>";
-  str += "<body>";
-  if (relayAState == RELAY_STATE_OFF) {
-    str += "<p><a href=\"/relay_a_on\">Relay A ON</a></p>";
-  } else {
-    str += "<p><a href=\"/relay_a_off\">Relay A OFF</a></p>";
-  }
-  str += "<br>";
-  if (relayBState == RELAY_STATE_OFF) {
-    str += "<p><a href=\"/relay_b_on\">Relay B ON</a></p>";
-  } else {
-    str += "<p><a href=\"/relay_b_off\">Relay B OFF</a></p>";
-  }
-  str += "</body>";
-  str += "</html>";
+  String str = String(RELAY_PAGE);
+  str.replace(RELAY_A_NAME, "Relay A");
+  str.replace(RELAY_A_STATE, (relayAState == RELAY_STATE_OFF) ? "ON" : "OFF");
+  str.replace(RELAY_B_NAME, "Relay B");
+  str.replace(RELAY_B_STATE, (relayBState == RELAY_STATE_OFF) ? "ON" : "OFF");
   return str;
 }
 
 String buildConfigPageHtml(void) {
-  String str = "<!DOCTYPE html>";
-  str += "<html>";
-  str += "<head>";
-  str += "<title>ESP8266's 2-Channel Relays Config</title>";
-  str += "</head>";
-  str += "<body>";
-  str += "<form method=\"post\" enctype=\"application/x-www-form-urlencoded\" action=\"postconfig\">";
-  str += "<input type=\"text\" name=\"SSID\" value=\"\">";
-  str += "<br>";
-  str += "<input type=\"text\" name=\"Password\" value=\"\">";
-  str += "<br>";
-  str += "<input type=\"submit\" value=\"Apply\">";
-  str += "</form>";
-  str += "</body>";
-  str += "</html>";
-  return str;
+  return CONFIG_PAGE;
 }
 
 String buildRedirectHtml(void) {
-  String str = "<!DOCTYPE html>";
-  str += "<html>";
-  str += "<meta http-equiv=\"refresh\" content=\"0; url=../\">";
-  str += "<head>";
-  str += "<title>ESP8266's 2-Channel Relays</title>";
-  str += "</head>";
-  str += "<body>";
-  str += "</body>";
-  str += "</html>";
-  return str;
+  return REDIRECT_PAGE;
 }
 
 void onSoftAPModeStationConnected(const WiFiEventSoftAPModeStationConnected& event) {
