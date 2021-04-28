@@ -1,5 +1,8 @@
 #include <Arduino.h>
 
+const String RELAY_A_DEFAULT_NAME = "Relay A";
+const String RELAY_B_DEFAULT_NAME = "Relay B";
+
 const String RELAY_A_NAME = "[RELAY_A_DISPLAY_NAME]";
 const String RELAY_A_STATE = "[RELAY_A_STATUS]";
 const String RELAY_B_NAME = "[RELAY_B_DISPLAY_NAME]";

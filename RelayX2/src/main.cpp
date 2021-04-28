@@ -257,11 +257,18 @@ bool loadWifiConfig(void) {
   relayADisplayName = cfg.substring(0, index);
   cfg.remove(0, index + 3);
 
-  index = cfg.indexOf("\r\n");
-  relayBDisplayName = cfg.substring(0, index);
+  relayBDisplayName = cfg;
 
-  if (ssidName.isEmpty() || ssidPassword.isEmpty() || relayADisplayName.isEmpty() || relayBDisplayName.is()) {
+  if (ssidName.isEmpty() || ssidPassword.isEmpty()) {
     return false;
+  }
+
+  if (relayADisplayName.isEmpty()) {
+    relayADisplayName = RELAY_A_DEFAULT_NAME;
+  }
+
+  if (relayBDisplayName.isEmpty()) {
+    relayBDisplayName = RELAY_B_DEFAULT_NAME;
   }
 
   return true;
