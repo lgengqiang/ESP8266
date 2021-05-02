@@ -197,7 +197,6 @@ void runasStation(void) {
   // STA mode
   WiFi.mode(WIFI_STA);
   // Connect to WIFI
-  Serial.printf("SSID: %s, Password: %s\r\n", ssidName.c_str(), ssidPassword.c_str());
   WiFi.begin(ssidName, ssidPassword);
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
@@ -247,28 +246,34 @@ bool loadWifiConfig(void) {
 
   int index = cfg.indexOf("\r\n");
   ssidName = cfg.substring(0, index);
-  cfg.remove(0, index + 3);
+  cfg.remove(0, index + 2);
 
   index = cfg.indexOf("\r\n");
   ssidPassword = cfg.substring(0, index);
-  cfg.remove(0, index + 3);
+  cfg.remove(0, index + 2);
 
   index = cfg.indexOf("\r\n");
   relayADisplayName = cfg.substring(0, index);
-  cfg.remove(0, index + 3);
+  cfg.remove(0, index + 2);
 
   relayBDisplayName = cfg;
+  
+  Serial.println("Loaded WIFI configuration.");
+  Serial.printf("SSID: %s\r\n", ssidName.c_str());
+  Serial.printf("Password: %s\r\n", ssidPassword.c_str());
+  Serial.printf("Display name of Relay A: %s\r\n", relayADisplayName.c_str());
+  Serial.printf("Display name of Relay B: %s\r\n", relayBDisplayName.c_str());
 
   if (ssidName.isEmpty() || ssidPassword.isEmpty()) {
     return false;
   }
 
   if (relayADisplayName.isEmpty()) {
-    relayADisplayName = RELAY_A_DEFAULT_NAME;
+    relayADisplayName = DEFAULT_RELAY_A;
   }
 
   if (relayBDisplayName.isEmpty()) {
-    relayBDisplayName = RELAY_B_DEFAULT_NAME;
+    relayBDisplayName = DEFAULT_RELAY_B;
   }
 
   return true;
@@ -327,6 +332,8 @@ void onConfigApplyPage(void) {
   relayADisplayName = webserver.arg("DisplayNameA");
   relayBDisplayName = webserver.arg("DisplayNameB");
   Serial.printf("SSID: %s, Password: %s\r\n", ssidName.c_str(), ssidPassword.c_str());
+  Serial.printf("Relay A display as: %s\r\n", relayADisplayName.c_str());
+  Serial.printf("Relay B display as: %s\r\n", relayBDisplayName.c_str());
   saveWifiConfig(ssidName, ssidPassword, relayADisplayName, relayBDisplayName);
 
   webserver.send(200, "text/html", buildRedirectHtml());
@@ -367,10 +374,12 @@ void onRelayBOff(void) {
 
 String buildHomePageHtml(void) {
   String str = String(RELAY_PAGE);
-  str.replace(RELAY_A_NAME, "Relay A");
-  str.replace(RELAY_A_STATE, (relayAState == RELAY_STATE_OFF) ? "ON" : "OFF");
-  str.replace(RELAY_B_NAME, "Relay B");
-  str.replace(RELAY_B_STATE, (relayBState == RELAY_STATE_OFF) ? "ON" : "OFF");
+  str.replace(KEYWORD_RELAY_A_DISPLAY, relayADisplayName);
+  str.replace(KEYWORD_RELAY_A_STATUS, (relayAState == RELAY_STATE_OFF) ? "ON" : "OFF");
+  str.replace(KEYWORD_RELAY_A_HREF, (relayAState == RELAY_STATE_OFF) ? "/relay_a_on" : "/relay_a_off");
+  str.replace(KEYWORD_RELAY_B_DISPLAY, relayBDisplayName);
+  str.replace(KEYWORD_RELAY_B_STATUS, (relayBState == RELAY_STATE_OFF) ? "ON" : "OFF");
+  str.replace(KEYWORD_RELAY_B_HREF, (relayBState == RELAY_STATE_OFF) ? "/relay_b_on" : "/relay_b_off");
   return str;
 }
 

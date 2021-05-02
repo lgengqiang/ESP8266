@@ -1,12 +1,14 @@
 #include <Arduino.h>
 
-const String RELAY_A_DEFAULT_NAME = "Relay A";
-const String RELAY_B_DEFAULT_NAME = "Relay B";
+const String DEFAULT_RELAY_A = "Relay A";
+const String DEFAULT_RELAY_B = "Relay B";
 
-const String RELAY_A_NAME = "[RELAY_A_DISPLAY_NAME]";
-const String RELAY_A_STATE = "[RELAY_A_STATUS]";
-const String RELAY_B_NAME = "[RELAY_B_DISPLAY_NAME]";
-const String RELAY_B_STATE = "[RELAY_B_STATUS]";
+const String KEYWORD_RELAY_A_DISPLAY = "[(KEYWORD_RELAY_A_DISPLAY)]";
+const String KEYWORD_RELAY_A_STATUS = "[(KEYWORD_RELAY_A_STATUS)]";
+const String KEYWORD_RELAY_A_HREF = "[(KEYWORD_RELAY_A_HREF)]";
+const String KEYWORD_RELAY_B_DISPLAY = "[(KEYWORD_RELAY_B_DISPLAY)]";
+const String KEYWORD_RELAY_B_STATUS = "[(KEYWORD_RELAY_B_STATUS)]";
+const String KEYWORD_RELAY_B_HREF = "[(KEYWORD_RELAY_B_HREF)]";
 
 const String RELAY_PAGE = "<!DOCTYPE html>\
     <html>\
@@ -37,18 +39,18 @@ const String RELAY_PAGE = "<!DOCTYPE html>\
         <h1 class=\"h1\">WIFI Relays</h1>\
         <div class=\"div1\">\
             <div class=\"div2\">\
-                <a class=\"button\" href=\"/relay\">\
-                    <div>[RELAY_A_DISPLAY_NAME]</div>\
-                    <div>[RELAY_A_STATUS]</div>\
+                <a class=\"button\" href=\"[(KEYWORD_RELAY_A_HREF)]\">\
+                    <div>[(KEYWORD_RELAY_A_DISPLAY)]</div>\
+                    <div>[(KEYWORD_RELAY_A_STATUS)]</div>\
                 </a>\
             </div>\
         </div>\
         <div style=\"height: 25px;\"></div>\
         <div class=\"div1\">\
             <div class=\"div2\">\
-                <a class=\"button\" href=\"/relay\">\
-                    <div>[RELAY_B_DISPLAY_NAME]</div>\
-                    <div>[RELAY_B_STATUS]</div>\
+                <a class=\"button\" href=\"[(KEYWORD_RELAY_B_HREF)]\">\
+                    <div>[(KEYWORD_RELAY_B_DISPLAY)]</div>\
+                    <div>[(KEYWORD_RELAY_B_STATUS)]</div>\
                 </a>\
             </div>\
         </div>\
@@ -69,6 +71,12 @@ const String CONFIG_PAGE = "<!DOCTYPE html>\
                 <br><br>\
                 <div>Password:</div>\
                 <input type=\"text\" name=\"Password\" style=\"width: 99%;\">\
+                <br><br>\
+                <div>Relay A Display Name:</div>\
+                <input type=\"text\" name=\"DisplayNameA\" value=\"Relay A\" style=\"width: 99%;\">\
+                <br><br>\
+                <div>Relay B Display Name:</div>\
+                <input type=\"text\" name=\"DisplayNameB\" value=\"Relay B\" style=\"width: 99%;\">\
                 <br><br>\
                 <div style=\"text-align: center;\">\
                     <input type=\"submit\" value=\"Apply\"\
