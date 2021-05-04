@@ -6,7 +6,7 @@
 #include "resource.h"
 
 #define BUTTON_GPIO D3
-#define LED_STATE_GPIO LED_BUILTIN_AUX
+#define LED_STATE_GPIO LED_BUILTIN
 #define RELAY_GPIO D5
 
 #define RELAY_STATE_OFF 0
@@ -17,6 +17,8 @@
 #define DEVICE_STATE_WIFI_CONNECTING 1
 #define DEVICE_STATE_CONFIG 2
 #define DEVICE_STATE_RELAY 4
+
+uint32_t perviousMillis = 0;
 
 String ssidName;
 String ssidPassword;
@@ -74,6 +76,8 @@ void setup() {
   misc_init();
   Serial.println("[setup()] Peripherals have been initialized.");
 
+  digitalWrite(LED_STATE_GPIO, LOW);
+
   /* Load WIFI configuration */
   if (loadWifiConfig() == true) {
     /* WIFI already configured */
@@ -92,11 +96,27 @@ void setup() {
   
   Serial.println("[setup()] Finished setup processes.");
   Serial.println();
+  
+  for (uint8_t i = 0; i < 3; i++) {
+    digitalWrite(LED_STATE_GPIO, HIGH);
+    delay(100);
+    digitalWrite(LED_STATE_GPIO, LOW);
+    delay(100);
+  }
+  delay(1000);
+
+  perviousMillis = millis();
 }
 
 void loop() {
   // put your main code here, to run repeatedly:
   webserver.handleClient();
+  
+  uint32_t currentMillis = millis();
+  if ((currentMillis - perviousMillis) > 500) {
+    perviousMillis = currentMillis;
+    digitalWrite(LED_STATE_GPIO, (digitalRead(LED_STATE_GPIO) == LOW) ? HIGH : LOW);
+  }
 }
 
 void serial_init(void) {
@@ -168,6 +188,7 @@ void runasStation(void) {
   Serial.println("WIFI run as 'STA'.");
   // STA mode
   WiFi.mode(WIFI_STA);
+  WiFi.hostname(relayDisplayName);
   // Connect to WIFI
   WiFi.begin(ssidName, ssidPassword);
   while (WiFi.status() != WL_CONNECTED) {
