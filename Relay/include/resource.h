@@ -3,13 +3,13 @@
 
 const String SOFTAP_SSID_NAME = "RelayCFG";
 
-const String DEFAULT_HOST_NAME = "ESP8266 Relay";
+//const String DEFAULT_HOST_NAME = "ESP8266 Relay";
 
 const String RELAY_DEFAULT_NAME = "Relay";
 const String NOT_AVAILABLE = "N/A";
 
-const String STATUS_CONNECTED = "Connected";
-const String STATUS_NOT_CONNECT = "No connect";
+//const String STATUS_CONNECTED = "Connected";
+//const String STATUS_NOT_CONNECT = "No connect";
 const String STATUS_STA_STATUS = "[STA_CONNECTED]";
 const String STATUS_SSID_NAME = "[STA_SSID]";
 const String STATUS_STA_IP_ADDRESS = "[STA_IP_ADDRESS]";

@@ -63,6 +63,8 @@ void onStationModeConnected(const WiFiEventStationModeConnected& event);
 void onStationModeGotIP(const WiFiEventStationModeGotIP& event);
 void onStationModeDisconnected(const WiFiEventStationModeDisconnected& event);
 
+String getStatusString();
+
 void setup() {
   // put your setup code here, to run once:
 
@@ -276,7 +278,7 @@ void onRelayOff(void) {
 
 String buildStatusPageHtml(void) {
   String str = String(STATUS_PAGE);
-  str.replace(STATUS_STA_STATUS, (WiFi.status() == WL_CONNECTED) ? STATUS_CONNECTED : STATUS_NOT_CONNECT);
+  str.replace(STATUS_STA_STATUS, getStatusString());
   str.replace(STATUS_SSID_NAME, (WiFi.status() == WL_CONNECTED) ? WiFi.SSID() : NOT_AVAILABLE);
   str.replace(STATUS_STA_IP_ADDRESS, (WiFi.status() == WL_CONNECTED) ? WiFi.localIP().toString() : NOT_AVAILABLE);
   str.replace(STATUS_AP_SSID, SOFTAP_SSID_NAME);
@@ -318,4 +320,22 @@ void onStationModeGotIP(const WiFiEventStationModeGotIP& event) {
 
 void onStationModeDisconnected(const WiFiEventStationModeDisconnected& event) {
   Serial.println("WIFI(STA) disconnected.");
+}
+
+String getStatusString() {
+  switch (WiFi.status())
+  {
+  case WL_CONNECTED:
+    return "Connected";
+  case WL_NO_SSID_AVAIL:
+    return "No SSID available";
+  case WL_CONNECT_FAILED:
+    return "Connect failed";
+  case WL_DISCONNECTED:
+    return "Disconnected";
+  case WL_IDLE_STATUS:
+    return "Idle";
+  default:
+    return "Unknown";
+  }
 }
