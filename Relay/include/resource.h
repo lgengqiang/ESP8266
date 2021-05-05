@@ -1,10 +1,45 @@
 #include <Arduino.h>
 
+
+const String SOFTAP_SSID_NAME = "RelayCFG";
+
+const String DEFAULT_HOST_NAME = "ESP8266 Relay";
+
 const String RELAY_DEFAULT_NAME = "Relay";
+const String NOT_AVAILABLE = "N/A";
+
+const String STATUS_CONNECTED = "Connected";
+const String STATUS_NOT_CONNECT = "No connect";
+const String STATUS_STA_STATUS = "[STA_CONNECTED]";
+const String STATUS_SSID_NAME = "[STA_SSID]";
+const String STATUS_STA_IP_ADDRESS = "[STA_IP_ADDRESS]";
+const String STATUS_AP_SSID = "[AP_SSID]";
+const String STATUS_AP_IP_ADDRESS = "[AP_IP_ADDRESS]";
 
 const String RELAY_NAME = "[RELAY_DISPLAY_NAME]";
 const String RELAY_STATE = "[RELAY_STATUS]";
 const String RELAY_HREF = "[RELAY_HREF]";
+
+const String STATUS_PAGE = "<!DOCTYPE html>\
+    <html>\
+    <head>\
+        <title>ESP8266 Relay Status</title>\
+    </head>\
+    <body>\
+        <h1>Status for ESP8266 Relay</h1>\
+        <div>\
+            <h2>WIFI(STA) Status</h2>\
+            <p>[STA_CONNECTED]</P>\
+            <p>SSID: [STA_SSID]</p>\
+            <p>IP Address: [STA_IP_ADDRESS]</p>\
+        </div>\
+        <div>\
+            <h2>SoftAP Status</h2>\
+            <p>SoftAP SSID: [AP_SSID]</p>\
+            <p>SoftAP IP Address: [AP_IP_ADDRESS]</p>\
+        </div>\
+    </body>\
+    </html>";
 
 const String RELAY_PAGE = "<!DOCTYPE html>\
     <html>\
