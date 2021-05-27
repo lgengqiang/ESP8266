@@ -1,0 +1,53 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ESP8266 Relay</title>
+    <style>
+        .body {
+            text-align: center;
+        }
+
+        .nav {
+            text-align: left;
+        }
+
+        .button {
+            border: none;
+            color: white;
+            padding: 16px 40px;
+            text-decoration: none;
+            font-size: 30px;
+            margin: 2px;
+            cursor: pointer;
+        }
+
+        .button_on {
+            background-color: #198754;
+        }
+
+        .button_off {
+            background-color: #dc3545;
+        }
+    </style>
+</head>
+<body class="body">
+    <nav class="nav">
+        <a href="../">Home</a>
+        &nbsp;|&nbsp;
+        <a href="/status">Status</a>
+        &nbsp;|&nbsp;
+        <a href="/config">Config</a>
+    </nav>
+
+    <h1>ESP8266无线开关</h1>
+
+    <p style="padding: 10px;">{{relay_display_name}} : {{relay_state}}</p>
+
+    <div>
+        <a href="/relay_on" class="button button_on" style="{{show_on_button}}">开启</a>
+        <a href="/relay_off" class="button button_off" style="{{show_off_button}}">关闭</a>
+    </div>
+</body>
+</html>

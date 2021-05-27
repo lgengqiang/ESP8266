@@ -1,0 +1,78 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Relay Config</title>
+    <style>
+        .body {
+            text-align: center;
+        }
+
+        .nav {
+            text-align: left;
+            color: black;
+        }
+
+        .input_text {
+            width: 100%;
+            margin-top: 5px;
+            margin-bottom: 5px;
+        }
+
+        .button_submit {
+            font-size: 24px;
+            width: 25%;
+            min-width: 125px;
+            height: 64px;
+            border: none;
+            margin: 20px;
+            padding: 10px;
+            background-color: #0d6efd;
+            color: white;
+        }
+    </style>
+</head>
+<body class="body">
+    <nav class="nav">
+        <a href="../">Home</a>
+        &nbsp;|&nbsp;
+        <a href="/status">Status</a>
+        &nbsp;|&nbsp;
+        <a href="/config">Config</a>
+    </nav>
+
+    <h1>设置</h1>
+    <form method="post" enctype="application/x-www-form-urlencoded" action="postconfig">
+        <div style="display: inline-block;">
+            <table style="text-align: left;">
+                <tr>
+                    <td style="min-width: 50px;">
+                        无线网络:
+                    </td>
+                    <td>
+                        <input type="text" name="SSID" class="input_text" />
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        网络密码:
+                    </td>
+                    <td>
+                        <input type="text" name="Password" class="input_text" />
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        开关名称:
+                    </td>
+                    <td>
+                        <input type="text" name="RelayDisplayName" value="????" class="input_text" />
+                    </td>
+                </tr>
+            </table>
+            <input type="submit" value="Apply" class="button_submit" />
+        </div>
+    </form>
+</body>
+</html>

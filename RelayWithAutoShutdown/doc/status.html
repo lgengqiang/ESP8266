@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Relay Status</title>
+    <style>
+        .nav {
+            text-align: left;
+            color: black;
+        }
+    </style>
+</head>
+<body>
+    <nav class="nav">
+        <a href="../">Home</a>
+        &nbsp;|&nbsp;
+        <a href="/status">Status</a>
+        &nbsp;|&nbsp;
+        <a href="/config">Config</a>
+    </nav>
+
+    <div style="max-width: 600px; text-align: left">
+        <h2>WIFI连接状态</h2>
+        <p>{{sta_status}}</p>
+        <table>
+            <tr>
+                <td style="min-width: 100px;">
+                    <b>SSID:</b>
+                </td>
+                <td>
+                    {{ssid_name}}
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <b>IP Address:</b>
+                </td>
+                <td>
+                    {{sta_ip_address}}
+                </td>
+            </tr>
+        </table>
+
+        <p>&nbsp;</p>
+
+        <h2>后台网络状态</h2>
+        <table>
+            <tr>
+                <td style="min-width: 100px;">
+                    <b>SSID:</b>
+                </td>
+                <td>
+                    {{ap_ssid}}
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <b>IP Address:</b>
+                </td>
+                <td>
+                    {{ap_ip_address}}
+                </td>
+            </tr>
+        </table>
+    </div>
+</body>
+</html>
