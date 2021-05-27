@@ -188,10 +188,10 @@ const String CONFIG_PAGE = "<!DOCTYPE html>\
             <div style=\"display: inline-block;\">\
                 <table style=\"text-align: left;\">\
                     <tr>\
-                        <td style=\"min-width: 50px;\">\
+                        <td style=\"min-width: 120px;\">\
                             无线网络:\
                         </td>\
-                        <td>\
+                        <td style=\"min-width: 160px;\">\
                             <input type=\"text\" name=\"SSID\" class=\"input_text\" />\
                         </td>\
                     </tr>\
@@ -209,6 +209,22 @@ const String CONFIG_PAGE = "<!DOCTYPE html>\
                         </td>\
                         <td>\
                             <input type=\"text\" name=\"RelayDisplayName\" value=\"开关\" class=\"input_text\" />\
+                        </td>\
+                    </tr>\
+                    <tr>\
+                        <td>\
+                            开启阀值(KΩ):\
+                        </td>\
+                        <td>\
+                            <input type=\"number\" name=\"TurnOnThreshold\" value=\"5.0\" class=\"input_text\" />\
+                        </td>\
+                    </tr>\
+                    <tr>\
+                        <td>\
+                            关闭阀值(KΩ):\
+                        </td>\
+                        <td>\
+                            <input type=\"number\" name=\"ShutdownThreshold\" value=\"100.0\" class=\"input_text\" />\
                         </td>\
                     </tr>\
                 </table>\
