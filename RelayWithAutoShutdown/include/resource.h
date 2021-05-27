@@ -10,6 +10,7 @@ const String STATUS_SSID_NAME = "{{ssid_name}}";
 const String STATUS_STA_IP_ADDRESS = "{{sta_ip_address}}";
 const String STATUS_AP_SSID = "{{ap_ssid}}";
 const String STATUS_AP_IP_ADDRESS = "{{ap_ip_address}}";
+const String STATUS_LDR_VALUE = "{{ldr_value}}";
 
 const String RELAY_NAME = "{{relay_display_name}}";
 const String RELAY_STATE = "{{relay_state}}";
@@ -123,6 +124,18 @@ const String STATUS_PAGE = "<!DOCTYPE html>\
                     </td>\
                     <td>\
                         {{ap_ip_address}}\
+                    </td>\
+                </tr>\
+            </table>\
+            <p>&nbsp;</p>\
+            <h2>环境信息</h2>\
+            <table>\
+                <tr>\
+                    <td style=\"min-width: 100px;\">\
+                        <b>光敏电阻阻值:</b>\
+                    </td>\
+                    <td>\
+                        {{ldr_value}}&nbsp;KΩ\
                     </td>\
                 </tr>\
             </table>\

@@ -13,8 +13,6 @@
 #define LED_STATE_GPIO LED_BUILTIN
 #define RELAY_GPIO D5
 
-uint32_t perviousMillis = 0;
-
 String ssidName;
 String ssidPassword;
 String relayDisplayName;
@@ -29,6 +27,8 @@ WiFiEventHandler onSoftAPModeStationDisconnectedEvent;
 WiFiEventHandler onStationModeConnectedEvent;
 WiFiEventHandler onStationModeGotIPEvent;
 WiFiEventHandler onStationModeDisconnectedEvent;
+WiFiEventHandler onStationModeAuthModeChangedEvent;
+WiFiEventHandler onStationModeDHCPTimeoutEvent;
 
 void serial_init(void);
 void button_init(void);
@@ -62,6 +62,8 @@ void onSoftAPModeStationDisconnected(const WiFiEventSoftAPModeStationDisconnecte
 void onStationModeConnected(const WiFiEventStationModeConnected& event);
 void onStationModeGotIP(const WiFiEventStationModeGotIP& event);
 void onStationModeDisconnected(const WiFiEventStationModeDisconnected& event);
+void onStationModeAuthModeChanged(const WiFiEventStationModeAuthModeChanged& event);
+void onStationModeDHCPTimeout(void);
 
 String getStatusString();
 
@@ -99,12 +101,16 @@ void setup() {
 
   /* WIFI */
   WiFi.mode(WIFI_AP_STA);
-  //WiFi.hostname(relayDisplayName);
+  
   onSoftAPModeStationConnectedEvent = WiFi.onSoftAPModeStationConnected(&onSoftAPModeStationConnected);
   onSoftAPModeStationDisconnectedEvent = WiFi.onSoftAPModeStationDisconnected(&onSoftAPModeStationDisconnected);
+
   onStationModeConnectedEvent = WiFi.onStationModeConnected(&onStationModeConnected);
   onStationModeGotIPEvent = WiFi.onStationModeGotIP(&onStationModeGotIP);
   onStationModeDisconnectedEvent = WiFi.onStationModeDisconnected(&onStationModeDisconnected);
+  onStationModeAuthModeChangedEvent =  WiFi.onStationModeAuthModeChanged(&onStationModeAuthModeChanged);
+  onStationModeDHCPTimeoutEvent = WiFi.onStationModeDHCPTimeout(&onStationModeDHCPTimeout);
+  
 
   /* WIFI SoftAP */
   WiFi.softAPConfig(ipAddress, ipAddress, IPAddress(255, 255, 255, 0));
@@ -116,19 +122,11 @@ void setup() {
   /* Finished */
   Serial.println("[Setup] Finished setup.");
   Serial.println();
-
-  perviousMillis = millis();
 }
 
 void loop() {
   // put your main code here, to run repeatedly:
   webserver.handleClient();
-
-  uint32_t currentMillis = millis();
-  if ((currentMillis - perviousMillis) > 500) {
-    perviousMillis = currentMillis;
-    digitalWrite(LED_STATE_GPIO, (digitalRead(LED_STATE_GPIO) == LOW) ? HIGH : LOW);
-  }
 }
 
 void serial_init(void) {
@@ -286,12 +284,16 @@ String buildHomePageHtml(void) {
 }
 
 String buildStatusPageHtml(void) {
+  int adcValue = analogRead(A0);
+  float ldr = 10.0f * (1024.0f - adcValue) / adcValue;
+
   String str = String(STATUS_PAGE);
   str.replace(STATUS_STA_STATUS, getStatusString());
   str.replace(STATUS_SSID_NAME, (WiFi.status() == WL_CONNECTED) ? WiFi.SSID() : NOT_AVAILABLE);
   str.replace(STATUS_STA_IP_ADDRESS, (WiFi.status() == WL_CONNECTED) ? WiFi.localIP().toString() : NOT_AVAILABLE);
   str.replace(STATUS_AP_SSID, SOFTAP_SSID_NAME);
   str.replace(STATUS_AP_IP_ADDRESS, WiFi.softAPIP().toString());
+  str.replace(STATUS_LDR_VALUE, String(ldr));
   return str;
 }
 
@@ -313,14 +315,27 @@ void onSoftAPModeStationDisconnected(const WiFiEventSoftAPModeStationDisconnecte
 
 void onStationModeConnected(const WiFiEventStationModeConnected& event) {
   Serial.printf("WIFI(STA) connected. SSID: %s\r\n", event.ssid.c_str());
+  digitalWrite(LED_STATE_GPIO, HIGH); // LED ON
 }
 
 void onStationModeGotIP(const WiFiEventStationModeGotIP& event) {
   Serial.printf("WIFI(STA) got IP: %s\r\n", event.ip.toString().c_str());
+  digitalWrite(LED_STATE_GPIO, LOW); // LED OFF
 }
 
 void onStationModeDisconnected(const WiFiEventStationModeDisconnected& event) {
   Serial.println("WIFI(STA) disconnected.");
+  digitalWrite(LED_STATE_GPIO, HIGH); // LED ON
+}
+
+void onStationModeAuthModeChanged(const WiFiEventStationModeAuthModeChanged& event) {
+  Serial.println("WIFI(STA) Auth mode changed.");
+  digitalWrite(LED_STATE_GPIO, HIGH); // LED ON
+}
+
+void onStationModeDHCPTimeout(void) {
+  Serial.println("WIFI(STA) DHCP timeout.");
+  digitalWrite(LED_STATE_GPIO, HIGH); // LED ON
 }
 
 String getStatusString() {
