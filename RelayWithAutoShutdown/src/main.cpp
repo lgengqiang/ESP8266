@@ -196,7 +196,10 @@ void led_init(void)
 
 void misc_init(void)
 {
-    LittleFS.begin();
+    if (!LittleFS.begin())
+    {
+        Serial.println("An Error has occurred while mounting LittleFS");
+    }
 }
 
 void ICACHE_RAM_ATTR onButtonPressed(void)
