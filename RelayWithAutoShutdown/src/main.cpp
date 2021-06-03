@@ -4,6 +4,7 @@
 #include "LittleFS.h"
 #include "resource.h"
 #include <Arduino.h>
+#include "ArduinoJson.h"
 
 #define RELAY_STATE_OFF 0
 #define RELAY_STATE_ON 1
@@ -40,7 +41,7 @@ void relay_init(void);
 void led_init(void);
 void misc_init(void);
 
-void ICACHE_RAM_ATTR onButtonPressed(void);
+void IRAM_ATTR onButtonPressed(void);
 
 float getLDRValue(void);
 
@@ -232,33 +233,29 @@ void writeRelay(int state)
 
 bool loadWifiConfig(void)
 {
-    File file = LittleFS.open("/wifi.cfg", "r");
+    File file = LittleFS.open("/config.json", "r");
     if (!file)
     {
         Serial.println("Failed to read configuration.");
         return false;
     }
 
-    String cfg = file.readString();
+    StaticJsonDocument<512> doc;
+    DeserializationError error = deserializeJson(doc, file);
+
+    if (error)
+    {
+        Serial.println("Failed to deserialize Json.");
+        return false;
+    }
+
     file.close();
 
-    int index = cfg.indexOf("\r\n");
-    ssidName = cfg.substring(0, index);
-    cfg.remove(0, index + 2);
-
-    index = cfg.indexOf("\r\n");
-    ssidPassword = cfg.substring(0, index);
-    cfg.remove(0, index + 2);
-
-    index = cfg.indexOf("\r\n");
-    relayDisplayName = cfg.substring(0, index);
-    cfg.remove(0, index + 2);
-
-    index = cfg.indexOf("\r\n");
-    turnOnThreshold = cfg.substring(0, index).toFloat();
-    cfg.remove(0, index + 2);
-
-    shutdownThreshold = cfg.toFloat();
+    ssidName = String(doc["SSID"].as<const char*>());
+    ssidPassword = String(doc["Password"].as<const char*>());
+    relayDisplayName = String(doc["RelayDisplayName"].as<const char*>());
+    turnOnThreshold = doc["TurnOnThreshold"].as<float>();
+    shutdownThreshold = doc["ShutdownThreshold"].as<float>();
 
     Serial.println("Loaded configuration.");
     Serial.printf("    SSID: %s\r\n", ssidName.c_str());
@@ -282,19 +279,26 @@ bool loadWifiConfig(void)
 
 bool saveWifiConfig(String ssid, String pasword, String displayName, float onThreshold, float offThreshold)
 {
-    File file = LittleFS.open("/wifi.cfg", "w");
+    File file = LittleFS.open("/config.json", "w");
     if (!file)
     {
         Serial.println("Failed to write configuration.");
         return false;
     }
 
-    file.println(ssid);
-    file.println(pasword);
-    file.println(displayName);
-    file.println(onThreshold);
-    file.println(offThreshold);
-    file.flush();
+    StaticJsonDocument<512> doc;
+    doc["SSID"] = ssidName;
+    doc["Password"] = ssidPassword;
+    doc["RelayDisplayName"] = relayDisplayName;
+    doc["TurnOnThreshold"] = turnOnThreshold;
+    doc["ShutdownThreshold"] = shutdownThreshold;
+
+    if (serializeJson(doc, file) == 0)
+    {
+        file.close();
+        return false;
+    }
+
     file.close();
     return true;
 }
