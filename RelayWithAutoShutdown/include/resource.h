@@ -224,14 +224,25 @@ const String CONFIG_PAGE = "<!DOCTYPE html>\
                         </td>\
                     </tr>\
                     <tr>\
-                        <td>\
-                            开启时间:\
+                        <td colspan=\"3\">\
+                            <input type=\"checkbox\" name=\"EnableTurnOnTimeRange\" checked />\
+                            仅在以下时间自动开启\
                         </td>\
-                        <td style=\"min-width: 20px;\">\
-                            <input type=\"checkbox\" name=\"EnableTurnOnTime\" checked />\
+                    </tr>\
+                    <tr>\
+                        <td style=\"text-align: right;\">\
+                            From:\
                         </td>\
-                        <td style=\"min-width: 140px;\">\
-                            <input type=\"time\" name=\"TurnOnTime\" value=\"09:00\" class=\"input_text\" />\
+                        <td colspan=\"2\">\
+                            <input type=\"time\" name=\"TurnOnBeginTime\" value=\"10:00\" class=\"input_text\" />\
+                        </td>\
+                    </tr>\
+                    <tr>\
+                        <td style=\"text-align: right;\">\
+                            To:\
+                        </td>\
+                        <td colspan=\"2\">\
+                            <input type=\"time\" name=\"TurnOnEndTime\" value=\"22:00\" class=\"input_text\" />\
                         </td>\
                     </tr>\
                     <tr>\
@@ -246,14 +257,25 @@ const String CONFIG_PAGE = "<!DOCTYPE html>\
                         </td>\
                     </tr>\
                     <tr>\
-                        <td>\
-                            关闭时间:\
+                        <td colspan=\"3\">\
+                            <input type=\"checkbox\" name=\"EnableShutdownTimeRange\" checked />\
+                            仅在以下时间自动关闭\
                         </td>\
-                        <td>\
-                            <input type=\"checkbox\" name=\"EnableShutdownTime\" checked />\
+                    </tr>\
+                    <tr>\
+                        <td style=\"text-align: right;\">\
+                            From:\
                         </td>\
-                        <td>\
-                            <input type=\"time\" name=\"ShutdownTime\" value=\"18:00\" class=\"input_text\" />\
+                        <td colspan=\"2\">\
+                            <input type=\"time\" name=\"ShutdownBeginTime\" value=\"18:00\" class=\"input_text\" />\
+                        </td>\
+                    </tr>\
+                    <tr>\
+                        <td style=\"text-align: right;\">\
+                            To:\
+                        </td>\
+                        <td colspan=\"2\">\
+                            <input type=\"time\" name=\"ShutdownEndTime\" value=\"06:00\" class=\"input_text\" />\
                         </td>\
                     </tr>\
                 </table>\
