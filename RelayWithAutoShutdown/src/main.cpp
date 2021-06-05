@@ -455,7 +455,7 @@ bool loadWifiConfig(void)
         return false;
     }
 
-    StaticJsonDocument<1024> doc;
+    StaticJsonDocument<768> doc;
     DeserializationError error = deserializeJson(doc, file);
 
     if (error)
@@ -527,7 +527,7 @@ bool saveWifiConfig(void)
         return false;
     }
 
-    StaticJsonDocument<1024> doc;
+    StaticJsonDocument<768> doc;
     doc["SSID"] = ssidName;
     doc["Password"] = ssidPassword;
     doc["RelayDisplayName"] = relayDisplayName;
