@@ -1,27 +1,37 @@
+#include <Arduino.h>
 #include "ESP8266WebServer.h"
 #include "ESP8266WiFi.h"
 #include "FS.h"
 #include "LittleFS.h"
 #include "resource.h"
-#include <Arduino.h>
 #include "ArduinoJson.h"
+#include "WiFiUdp.h"
+#include "NTPClient.h"
 
 #define RELAY_STATE_OFF 0
 #define RELAY_STATE_ON 1
 #define RELAY_STATE_DEFAULT RELAY_STATE_OFF
 
-#define BUTTON_GPIO D3
-#define LED_STATE_GPIO LED_BUILTIN
-#define RELAY_GPIO D5
+#define BUTTON_PIN D3
+#define LED_STATE_PIN LED_BUILTIN
+#define RELAY_PIN D5
 
 unsigned long perviousMillis = 0;
 
 int relayState = RELAY_STATE_DEFAULT;
 String ssidName;
 String ssidPassword;
-String relayDisplayName;
+String relayDisplayName(RELAY_DEFAULT_NAME);
+bool enableTurnOnThreshold = false;
 float turnOnThreshold = 0.0f;
+bool enableShutdownThreshold = false;
 float shutdownThreshold = 0.0f;
+bool enableTurnOnTime = false;
+int turnOnHour = -1;
+int turnOnMinute = -1;
+bool enableShutdownTime = false;
+int shutdownHour = -1;
+int shutdownMinute = -1;
 
 ESP8266WebServer webserver;
 
@@ -35,24 +45,27 @@ WiFiEventHandler onStationModeDisconnectedEvent;
 WiFiEventHandler onStationModeAuthModeChangedEvent;
 WiFiEventHandler onStationModeDHCPTimeoutEvent;
 
+WiFiUDP ntpUDP;
+NTPClient timeClient(ntpUDP, "cn.ntp.org.cn");
+
 void serial_init(void);
 void button_init(void);
 void relay_init(void);
 void led_init(void);
 void misc_init(void);
 
-void IRAM_ATTR onButtonPressed(void);
+void IRAM_ATTR buttonHandler(void);
 
 float getLDRValue(void);
 
 void ledStatusOn(void);
 void ledStatusOff(void);
 
-void writeRelay(int state);
+int readRelay(void);
 void writeRelay(int state);
 
 bool loadWifiConfig(void);
-bool saveWifiConfig(String ssid, String pasword, String displayName, float onThreshold, float offThreshold);
+bool saveWifiConfig(void);
 
 void onPageNotFound(void);
 void onStatusPage(void);
@@ -76,7 +89,8 @@ void onStationModeDisconnected(const WiFiEventStationModeDisconnected &event);
 void onStationModeAuthModeChanged(const WiFiEventStationModeAuthModeChanged &event);
 void onStationModeDHCPTimeout(void);
 
-String getStatusString();
+String getStatusString(void);
+bool isInTimeRange(time_t* from, time_t* to, time_t* cur);
 
 void setup()
 {
@@ -88,8 +102,6 @@ void setup()
     relay_init();
     misc_init();
     Serial.println("[Setup] Peripherals have been initialized.");
-
-    ledStatusOff();
 
     /* Load WIFI config */
     if (loadWifiConfig() == true)
@@ -130,10 +142,13 @@ void setup()
     WiFi.softAP(SOFTAP_SSID_NAME);
 
     /* WIFI Station */
-    WiFi.begin(ssidName, ssidPassword);
+    if (!ssidName.isEmpty() && !ssidPassword.isEmpty())
+    {
+        WiFi.begin(ssidName, ssidPassword);
+    }
 
     /* Finished */
-    Serial.println("[Setup] Finished setup.");
+    Serial.println("[Setup] Finished.");
     Serial.println();
 
     perviousMillis = millis();
@@ -145,29 +160,138 @@ void loop()
     webserver.handleClient();
 
     unsigned long currentMillis = millis();
-    if ((currentMillis - perviousMillis) > 60000)
+    if ((currentMillis - perviousMillis) > 30000L)
     {
         perviousMillis = currentMillis;
 
+        // LDR value
         float ldr = getLDRValue();
+        Serial.printf("[LDR] LDR Value: %f\r\n", ldr);
 
-        if (turnOnThreshold > 0.0f)
+        // NTP Time
+        bool ntpUpdated = timeClient.update();
+        tm now = {0};
+        now.tm_hour = timeClient.getHours();
+        now.tm_min = timeClient.getMinutes();
+        time_t timeNow = mktime(&now);
+
+        // Turn On
+        if (enableTurnOnThreshold && turnOnThreshold > 0.0f)
         {
-            if (ldr <= turnOnThreshold)
+            bool shouldTurnOn = (ldr <= turnOnThreshold);
+            if (enableTurnOnTime)
             {
-                Serial.printf("Turn on by LDR.\r\n    LDR Value: %f;  Threshold: %f.\r\n", ldr, turnOnThreshold);
+                tm tm = {0};
+                tm.tm_hour = turnOnHour;
+                tm.tm_min = turnOnMinute;
+                time_t time = mktime(&tm);
+
+                if (timeNow < time)
+                {
+                    shouldTurnOn = false;
+                }
+            }
+
+            if (shouldTurnOn && (readRelay() == RELAY_STATE_OFF))
+            {
+                Serial.printf("Automatic Turn On\r\n");
                 writeRelay(RELAY_STATE_ON);
             }
         }
 
-        if (shutdownThreshold > 0.0f)
+        // Shutdown
+        if (enableShutdownThreshold && shutdownThreshold > 0.0f)
         {
-            if (ldr >= shutdownThreshold)
+            bool shouldShutdown = (ldr >= shutdownThreshold);
+
+            if (enableShutdownTime)
             {
-                Serial.printf("Shutdown by LDR.\r\n    LDR Value: %f;  Threshold: %f.\r\n", ldr, shutdownThreshold);
-                writeRelay(RELAY_STATE_OFF);
+                tm tm = {0};
+                tm.tm_hour = shutdownHour;
+                tm.tm_min = shutdownMinute;
+                time_t time = mktime(&tm);
+
+                if (timeNow < time)
+                {
+                    shouldShutdown = false;
+                }
+
+                if (shouldShutdown && (readRelay() == RELAY_STATE_ON))
+                {
+                    Serial.printf("Automatic Shutdown\r\n");
+                    writeRelay(RELAY_STATE_OFF);
+                }
             }
         }
+
+/*
+        if (enableTurnOnThreshold)
+        {
+            if (turnOnThreshold > 0.0f)
+            {
+                if (ldr <= turnOnThreshold)
+                {
+                    Serial.printf("Turn On by LDR.\r\n    LDR Value: %f;  Threshold: %f.\r\n", ldr, turnOnThreshold);
+                    writeRelay(RELAY_STATE_ON);
+                }
+            }
+        }
+
+        if (enableShutdownThreshold)
+        {
+            if (shutdownThreshold > 0.0f)
+            {
+                if (ldr >= shutdownThreshold)
+                {
+                    Serial.printf("Shutdown by LDR.\r\n    LDR Value: %f;  Threshold: %f.\r\n", ldr, shutdownThreshold);
+                    writeRelay(RELAY_STATE_OFF);
+                }
+            }
+        }
+
+        if (enableTurnOnTime || enableShutdownTime)
+        {
+            bool updateSuccessfully = timeClient.update();
+
+            if (updateSuccessfully)
+            {
+                Serial.printf("[Debug] NTP Time: %02d:%02d:%02d\r\n", timeClient.getHours(), timeClient.getMinutes(), timeClient.getSeconds());
+
+                tm now = {0};
+                now.tm_hour = timeClient.getHours();
+                now.tm_min = timeClient.getMinutes();
+                time_t timeNow = mktime(&now);
+
+                if (enableTurnOnTime)
+                {
+                    tm tm = {0};
+                    tm.tm_hour = turnOnHour;
+                    tm.tm_min = turnOnMinute;
+                    time_t time = mktime(&tm);
+
+                    if (timeNow >= time)
+                    {
+                        Serial.println("Turn On by Time");
+                        writeRelay(RELAY_STATE_ON);
+                    }
+                }
+
+                if (enableShutdownTime)
+                {
+                    tm tm = {0};
+                    tm.tm_hour = shutdownHour;
+                    tm.tm_min = shutdownMinute;
+                    time_t time = mktime(&tm);
+
+                    if (timeNow >= time)
+                    {
+                        Serial.println("Shutdown by Time");
+                        writeRelay(RELAY_STATE_OFF);
+                    }
+                }
+            }
+        }
+*/
     }
 }
 
@@ -178,36 +302,41 @@ void serial_init(void)
 
 void button_init(void)
 {
-    pinMode(BUTTON_GPIO, INPUT_PULLUP);
-    attachInterrupt(BUTTON_GPIO, onButtonPressed, FALLING);
+    pinMode(BUTTON_PIN, INPUT_PULLUP);
+    attachInterrupt(BUTTON_PIN, buttonHandler, FALLING);
 }
 
 void relay_init(void)
 {
-    pinMode(RELAY_GPIO, OUTPUT);
-    digitalWrite(RELAY_GPIO, LOW);
+    pinMode(RELAY_PIN, OUTPUT);
+    digitalWrite(RELAY_PIN, LOW);
 }
 
 void led_init(void)
 {
-    pinMode(LED_STATE_GPIO, OUTPUT);
-    digitalWrite(LED_STATE_GPIO, LOW);
+    pinMode(LED_STATE_PIN, OUTPUT);
+    digitalWrite(LED_STATE_PIN, LOW);
 }
 
 void misc_init(void)
 {
+    // LittleFS
     if (!LittleFS.begin())
     {
-        Serial.println("An Error has occurred while mounting LittleFS");
+        Serial.println("An Error has occurred while mounting LittleFS.");
     }
+
+    // NTP
+    timeClient.begin();
+    timeClient.setTimeOffset(28800); // 28800: UTC+8
 }
 
-void ICACHE_RAM_ATTR onButtonPressed(void)
+void IRAM_ATTR buttonHandler(void)
 {
     Serial.println("Button pressed. Reset configuration.");
-    if (LittleFS.exists("/wifi.cfg"))
+    if (LittleFS.exists("/config.json"))
     {
-        LittleFS.remove("/wifi.cfg");
+        LittleFS.remove("/config.json");
         ESP.restart();
     }
 }
@@ -220,18 +349,23 @@ float getLDRValue(void)
 
 void ledStatusOn(void)
 {
-    digitalWrite(LED_STATE_GPIO, LOW);
+    digitalWrite(LED_STATE_PIN, LOW);
 }
 
 void ledStatusOff(void)
 {
-    digitalWrite(LED_STATE_GPIO, HIGH);
+    digitalWrite(LED_STATE_PIN, HIGH);
+}
+
+int readRelay(void)
+{
+    return relayState;
 }
 
 void writeRelay(int state)
 {
     relayState = state;
-    digitalWrite(RELAY_GPIO, (relayState == RELAY_STATE_OFF) ? LOW : HIGH);
+    digitalWrite(RELAY_PIN, (relayState == RELAY_STATE_OFF) ? LOW : HIGH);
 }
 
 bool loadWifiConfig(void)
@@ -239,7 +373,7 @@ bool loadWifiConfig(void)
     File file = LittleFS.open("/config.json", "r");
     if (!file)
     {
-        Serial.println("Failed to read configuration.");
+        Serial.println("Failed to open config.json.");
         return false;
     }
 
@@ -248,44 +382,48 @@ bool loadWifiConfig(void)
 
     if (error)
     {
-        Serial.println("Failed to deserialize Json.");
+        Serial.printf("Failed to deserialize Json, error code: %s\r\n", error.f_str());
+        file.close();
         return false;
     }
 
-    file.close();
-
-    ssidName = String(doc["SSID"].as<const char*>());
-    ssidPassword = String(doc["Password"].as<const char*>());
-    relayDisplayName = String(doc["RelayDisplayName"].as<const char*>());
+    ssidName = String(doc["SSID"].as<const char *>());
+    ssidPassword = String(doc["Password"].as<const char *>());
+    relayDisplayName = String(doc["RelayDisplayName"].as<const char *>());
+    enableTurnOnThreshold = doc["EnableTurnOnThreshold"].as<bool>();
     turnOnThreshold = doc["TurnOnThreshold"].as<float>();
+    enableShutdownThreshold = doc["EnableShutdownThreshold"].as<bool>();
     shutdownThreshold = doc["ShutdownThreshold"].as<float>();
+    enableTurnOnTime = doc["EnableTurnOnTime"].as<bool>();
+    turnOnHour = doc["TurnOnHour"].as<int>();
+    turnOnMinute = doc["TurnOnMinute"].as<int>();
+    enableShutdownTime = doc["EnableShutdownTime"].as<bool>();
+    shutdownHour = doc["ShutdownHour"].as<int>();
+    shutdownMinute = doc["ShutdownMinute"].as<int>();
 
-    Serial.println("Loaded configuration.");
+    Serial.println("Load Configuration:");
     Serial.printf("    SSID: %s\r\n", ssidName.c_str());
     Serial.printf("    Password: %s\r\n", ssidPassword.c_str());
     Serial.printf("    RelayDisplayName: %s\r\n", relayDisplayName.c_str());
-    Serial.printf("    TurnOnThreshold: %f\r\n", turnOnThreshold);
-    Serial.printf("    ShutdownThreshold: %f\r\n", shutdownThreshold);
+    Serial.printf("    EnableTurnOnThreshold: %s\r\n", enableTurnOnThreshold ? "True" : "False");
+    Serial.printf("    TurnOnThreshold: %.2f\r\n", turnOnThreshold);
+    Serial.printf("    EnableShutdownThreshold: %s\r\n", enableShutdownThreshold ? "True" : "False");
+    Serial.printf("    ShutdownThreshold: %.2f\r\n", shutdownThreshold);
+    Serial.printf("    EnableTurnOnTime: %s\r\n", enableTurnOnTime ? "True" : "False");
+    Serial.printf("    TurnOnTime: %02d:%02d\r\n", turnOnHour, turnOnMinute);
+    Serial.printf("    EnableShutdownTime: %s\r\n", enableShutdownTime ? "True" : "False");
+    Serial.printf("    ShutdownTime: %02d:%02d\r\n", shutdownHour, shutdownMinute);
 
-    if (ssidName.isEmpty() || ssidPassword.isEmpty())
-    {
-        return false;
-    }
-
-    if (relayDisplayName.isEmpty())
-    {
-        relayDisplayName = RELAY_DEFAULT_NAME;
-    }
-
+    file.close();
     return true;
 }
 
-bool saveWifiConfig(String ssid, String pasword, String displayName, float onThreshold, float offThreshold)
+bool saveWifiConfig(void)
 {
     File file = LittleFS.open("/config.json", "w");
     if (!file)
     {
-        Serial.println("Failed to write configuration.");
+        Serial.println("[SaveConfig] Failed to write configuration.");
         return false;
     }
 
@@ -293,22 +431,25 @@ bool saveWifiConfig(String ssid, String pasword, String displayName, float onThr
     doc["SSID"] = ssidName;
     doc["Password"] = ssidPassword;
     doc["RelayDisplayName"] = relayDisplayName;
+    doc["EnableTurnOnThreshold"] = enableTurnOnThreshold;
     doc["TurnOnThreshold"] = turnOnThreshold;
+    doc["EnableShutdownThreshold"] = enableShutdownThreshold;
     doc["ShutdownThreshold"] = shutdownThreshold;
+    doc["EnableTurnOnTime"] = enableTurnOnTime;
+    doc["TurnOnHour"] = turnOnHour;
+    doc["TurnOnMinute"] = turnOnMinute;
+    doc["EnableShutdownTime"] = enableShutdownTime;
+    doc["ShutdownHour"] = shutdownHour;
+    doc["ShutdownMinute"] = shutdownMinute;
 
-    if (serializeJson(doc, file) == 0)
-    {
-        file.close();
-        return false;
-    }
-
+    size_t result = serializeJson(doc, file);
     file.close();
-    return true;
+    return result == 0 ? true : false;
 }
 
 void onPageNotFound(void)
 {
-    Serial.print("[WebServer] Page not found: ");
+    Serial.print("[WebServer] Page Not Found: ");
     Serial.println(webserver.uri());
 }
 
@@ -320,23 +461,16 @@ void onStatusPage(void)
 
 void onConfigHomePage(void)
 {
-    Serial.println("[WebServer] Opening configuration page.");
+    Serial.println("[WebServer] Opening 'Config' page.");
     webserver.send(200, "text/html", buildConfigPageHtml());
 }
 
 void onConfigApplyPage(void)
 {
-    Serial.println("[WebServer] New configuration arrived.");
+    Serial.println("[WebServer] Received New Configuration.");
     if (webserver.method() != HTTP_POST)
     {
-        Serial.println("[Web_CFG] Only allow POST.");
-        webserver.send(404, "text/plain", "Method not allow");
-        return;
-    }
-
-    if (!webserver.hasArg("SSID") || !webserver.hasArg("Password") || !webserver.hasArg("RelayDisplayName"))
-    {
-        Serial.println("[WebServer] Arguments does not valid.");
+        Serial.println("[WebServer] Only allow POST method.");
         webserver.send(404, "text/plain", "Method not allow");
         return;
     }
@@ -344,35 +478,74 @@ void onConfigApplyPage(void)
     ssidName = webserver.arg("SSID");
     ssidPassword = webserver.arg("Password");
     relayDisplayName = webserver.arg("RelayDisplayName");
+
+    enableTurnOnThreshold = webserver.arg("EnableTurnOnThreshold") == "on" ? true : false;
     turnOnThreshold = webserver.arg("TurnOnThreshold").toFloat();
+    enableShutdownThreshold = webserver.arg("EnableShutdownThreshold") == "on" ? true : false;
     shutdownThreshold = webserver.arg("ShutdownThreshold").toFloat();
-    Serial.printf("SSID: %s, Password: %s\r\n", ssidName.c_str(), ssidPassword.c_str());
-    Serial.printf("SSID: %s, Password: %s\r\n", ssidName.c_str(), ssidPassword.c_str());
-    Serial.printf("Threshold -> Turn On: %f;  Shutdown: %f\r\n", turnOnThreshold, shutdownThreshold);
-    saveWifiConfig(ssidName, ssidPassword, relayDisplayName, turnOnThreshold, shutdownThreshold);
+
+    if (webserver.arg("TurnOnTime").length() == 5)
+    {
+        enableTurnOnTime = webserver.arg("EnableTurnOnTime") == "on" ? true : false;
+        turnOnHour = webserver.arg("TurnOnTime").substring(0, 2).toInt();
+        turnOnMinute = webserver.arg("TurnOnTime").substring(3, 5).toInt();
+    }
+    else
+    {
+        enableTurnOnTime = false;
+        turnOnHour = -1;
+        turnOnMinute = -1;
+    }
+
+    if (webserver.arg("ShutdownTime").length() == 5)
+    {
+        enableShutdownTime = webserver.arg("EnableShutdownTime") == "on" ? true : false;
+        shutdownHour = webserver.arg("ShutdownTime").substring(0, 2).toInt();
+        shutdownMinute = webserver.arg("ShutdownTime").substring(3, 5).toInt();
+    }
+    else
+    {
+        enableShutdownTime = false;
+        shutdownHour = -1;
+        shutdownMinute = -1;
+    }
+
+    Serial.printf("[WebServer] SSID: %s\r\n", ssidName.c_str());
+    Serial.printf("[WebServer] Password: %s\r\n", ssidPassword.c_str());
+
+    Serial.printf("[WebServer] Turn On Threshold: %s, %f\r\n", enableTurnOnThreshold ? "True" : "False", turnOnThreshold);
+    Serial.printf("[WebServer] Shutdown Threshold: %s, %f\r\n", enableShutdownThreshold ? "True" : "False", shutdownThreshold);
+
+    Serial.printf("[WebServer] Turn On Time: %s, %02d:%02d\r\n", enableTurnOnTime ? "True" : "False", turnOnHour, turnOnMinute);
+    Serial.printf("[WebServer] Shutdown Time: %s, %02d:%02d\r\n", enableShutdownTime ? "True" : "False", shutdownHour, shutdownMinute);
 
     webserver.send(200, "text/html", buildRedirectHtml());
 
+    saveWifiConfig();
+
     WiFi.disconnect(false);
-    WiFi.begin(ssidName, ssidPassword);
+    if (!ssidName.isEmpty() && !ssidPassword.isEmpty())
+    {
+        WiFi.begin(ssidName, ssidPassword);
+    }
 }
 
 void onRelayHomePage(void)
 {
-    Serial.println("Opening relay page.");
+    Serial.println("[WebServer] Opening 'Home' page.");
     webserver.send(200, "text/html", buildHomePageHtml());
 }
 
 void onRelayOn(void)
 {
-    Serial.println("Relay -> ON");
+    Serial.println("[WebServer] Relay ON");
     writeRelay(RELAY_STATE_ON);
     webserver.send(200, "text/html", buildRedirectHtml());
 }
 
 void onRelayOff(void)
 {
-    Serial.println("Relay -> OFF");
+    Serial.println("[WebServer] Relay OFF");
     writeRelay(RELAY_STATE_OFF);
     webserver.send(200, "text/html", buildRedirectHtml());
 }
@@ -421,35 +594,35 @@ void onSoftAPModeStationDisconnected(const WiFiEventSoftAPModeStationDisconnecte
 
 void onStationModeConnected(const WiFiEventStationModeConnected &event)
 {
-    Serial.printf("WIFI(STA) Connected. SSID: %s\r\n", event.ssid.c_str());
+    Serial.printf("[WIFI] Connected. SSID: %s\r\n", event.ssid.c_str());
     ledStatusOn();
 }
 
 void onStationModeGotIP(const WiFiEventStationModeGotIP &event)
 {
-    Serial.printf("WIFI(STA) Got IP: %s\r\n", event.ip.toString().c_str());
+    Serial.printf("[WIFI] Got IP: %s\r\n", event.ip.toString().c_str());
     ledStatusOff();
 }
 
 void onStationModeDisconnected(const WiFiEventStationModeDisconnected &event)
 {
-    Serial.println("WIFI(STA) Disconnected.");
+    Serial.println("[WIFI] Disconnected.");
     ledStatusOn();
 }
 
 void onStationModeAuthModeChanged(const WiFiEventStationModeAuthModeChanged &event)
 {
-    Serial.println("WIFI(STA) Auth Mode Changed.");
+    Serial.println("[WIFI] Auth Mode Changed.");
     ledStatusOn();
 }
 
 void onStationModeDHCPTimeout(void)
 {
-    Serial.println("WIFI(STA) DHCP Timeout.");
+    Serial.println("[WIFI] DHCP Timeout.");
     ledStatusOn();
 }
 
-String getStatusString()
+String getStatusString(void)
 {
     switch (WiFi.status())
     {
@@ -465,5 +638,21 @@ String getStatusString()
         return "空闲";
     default:
         return "未知";
+    }
+}
+
+bool isInTimeRange(time_t* from, time_t* to, time_t* cur)
+{
+    if (*from > *to)
+    {
+        return (*cur >= *from) || (*cur <= *to);
+    }
+    else if (*from < *to)
+    {
+        return (*from >= *cur) && (*cur <= *to);
+    }
+    else
+    {
+        return *from == *cur;
     }
 }

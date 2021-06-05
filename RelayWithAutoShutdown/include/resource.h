@@ -2,7 +2,7 @@
 
 const String SOFTAP_SSID_NAME = "RelayCFG";
 
-const String RELAY_DEFAULT_NAME = "Relay";
+const String RELAY_DEFAULT_NAME = "开关";
 const String NOT_AVAILABLE = "N/A";
 
 const String STATUS_STA_STATUS = "{{sta_status}}";
@@ -158,6 +158,7 @@ const String CONFIG_PAGE = "<!DOCTYPE html>\
                 color: black;\
             }\
             .input_text {\
+                border: black 1px solid;\
                 width: 100%;\
                 margin-top: 5px;\
                 margin-bottom: 5px;\
@@ -191,7 +192,7 @@ const String CONFIG_PAGE = "<!DOCTYPE html>\
                         <td style=\"min-width: 120px;\">\
                             无线网络:\
                         </td>\
-                        <td style=\"min-width: 160px;\">\
+                        <td style=\"min-width: 160px;\" colspan=\"2\">\
                             <input type=\"text\" name=\"SSID\" class=\"input_text\" />\
                         </td>\
                     </tr>\
@@ -199,7 +200,7 @@ const String CONFIG_PAGE = "<!DOCTYPE html>\
                         <td>\
                             网络密码:\
                         </td>\
-                        <td>\
+                        <td colspan=\"2\">\
                             <input type=\"text\" name=\"Password\" class=\"input_text\" />\
                         </td>\
                     </tr>\
@@ -207,7 +208,7 @@ const String CONFIG_PAGE = "<!DOCTYPE html>\
                         <td>\
                             开关名称:\
                         </td>\
-                        <td>\
+                        <td colspan=\"2\">\
                             <input type=\"text\" name=\"RelayDisplayName\" value=\"开关\" class=\"input_text\" />\
                         </td>\
                     </tr>\
@@ -215,20 +216,48 @@ const String CONFIG_PAGE = "<!DOCTYPE html>\
                         <td>\
                             开启阀值(KΩ):\
                         </td>\
+                        <td style=\"min-width: 20px;\">\
+                            <input type=\"checkbox\" name=\"EnableTurnOnThreshold\" checked />\
+                        </td>\
+                        <td style=\"min-width: 140px;\">\
+                            <input type=\"number\" name=\"TurnOnThreshold\" value=\"5.0\" step=\"0.1\" class=\"input_text\" />\
+                        </td>\
+                    </tr>\
+                    <tr>\
                         <td>\
-                            <input type=\"number\" name=\"TurnOnThreshold\" value=\"5.0\" class=\"input_text\" />\
+                            开启时间:\
+                        </td>\
+                        <td style=\"min-width: 20px;\">\
+                            <input type=\"checkbox\" name=\"EnableTurnOnTime\" checked />\
+                        </td>\
+                        <td style=\"min-width: 140px;\">\
+                            <input type=\"time\" name=\"TurnOnTime\" value=\"09:00\" class=\"input_text\" />\
                         </td>\
                     </tr>\
                     <tr>\
                         <td>\
                             关闭阀值(KΩ):\
                         </td>\
+                        <td style=\"min-width: 20px;\">\
+                            <input type=\"checkbox\" name=\"EnableShutdownThreshold\" checked />\
+                        </td>\
+                        <td style=\"min-width: 140px;\">\
+                            <input type=\"number\" name=\"ShutdownThreshold\" value=\"100.0\" step=\"0.1\" class=\"input_text\" />\
+                        </td>\
+                    </tr>\
+                    <tr>\
                         <td>\
-                            <input type=\"number\" name=\"ShutdownThreshold\" value=\"100.0\" class=\"input_text\" />\
+                            关闭时间:\
+                        </td>\
+                        <td>\
+                            <input type=\"checkbox\" name=\"EnableShutdownTime\" checked />\
+                        </td>\
+                        <td>\
+                            <input type=\"time\" name=\"ShutdownTime\" value=\"18:00\" class=\"input_text\" />\
                         </td>\
                     </tr>\
                 </table>\
-                <input type=\"submit\" value=\"Apply\" class=\"button_submit\" />\
+                <input type=\"submit\" value=\"应用\" class=\"button_submit\" />\
             </div>\
         </form>\
     </body>\
