@@ -18,6 +18,8 @@
 
 unsigned long perviousMillis = 0;
 
+String deviceName;
+
 int relayState = RELAY_STATE_DEFAULT;
 String ssidName;
 String ssidPassword;
@@ -123,13 +125,20 @@ bool isInTimeRange(time_t* from, time_t* to, time_t* cur);
 void setup()
 {
     // put your setup code here, to run once:
-
     /* Peripherals */
     serial_init();
+    button_init();
     led_init();
     relay_init();
     misc_init();
     Serial.println("[Setup] Peripherals have been initialized.");
+
+    Serial.printf("ESP8266 Chip ID: %08X\r\n", ESP.getChipId());
+    char chipID[20] = {0};
+    sprintf(chipID, "%08X", ESP.getChipId());
+    deviceName.concat("Relay(");
+    deviceName.concat(chipID);
+    deviceName.concat(")");
 
     /* Load WIFI config */
     if (loadWifiConfig() == true)
@@ -155,6 +164,9 @@ void setup()
 
     /* WIFI */
     WiFi.mode(WIFI_AP_STA);
+    WiFi.setAutoConnect(true);
+    WiFi.setHostname(deviceName.c_str());
+    Serial.printf("ESP8266 MAC Address: %s\r\n", WiFi.macAddress().c_str());
 
     onSoftAPModeStationConnectedEvent = WiFi.onSoftAPModeStationConnected(&onSoftAPModeStationConnected);
     onSoftAPModeStationDisconnectedEvent = WiFi.onSoftAPModeStationDisconnected(&onSoftAPModeStationDisconnected);
@@ -167,7 +179,8 @@ void setup()
 
     /* WIFI SoftAP */
     WiFi.softAPConfig(ipAddress, ipAddress, IPAddress(255, 255, 255, 0));
-    WiFi.softAP(SOFTAP_SSID_NAME);
+    // WiFi.softAP(SOFTAP_SSID_NAME);
+    WiFi.softAP(deviceName);
 
     /* WIFI Station */
     if (!ssidName.isEmpty() && !ssidPassword.isEmpty())
@@ -188,13 +201,13 @@ void loop()
     webserver.handleClient();
 
     unsigned long currentMillis = millis();
-    if ((currentMillis - perviousMillis) > 5000L)
+    if ((currentMillis - perviousMillis) > 10000L)
     {
         perviousMillis = currentMillis;
 
         // LDR value
         float ldr = getLDRValue();
-        Serial.printf("[LDR] LDR Value: %.2f\r\n", ldr);
+        Serial.printf("[LDR] LDR Value: %.1f\r\n", ldr);
 
         // NTP Time
         bool ntpUpdated = timeClient.update();
@@ -520,6 +533,11 @@ bool loadWifiConfig(void)
 
 bool saveWifiConfig(void)
 {
+    if (LittleFS.exists("/config.json"))
+    {
+        LittleFS.remove("/config.json");
+    }
+
     File file = LittleFS.open("/config.json", "w");
     if (!file)
     {
@@ -731,7 +749,8 @@ String buildStatusPageHtml(void)
     str.replace(STATUS_STA_STATUS, getStatusString());
     str.replace(STATUS_SSID_NAME, (WiFi.status() == WL_CONNECTED) ? WiFi.SSID() : NOT_AVAILABLE);
     str.replace(STATUS_STA_IP_ADDRESS, (WiFi.status() == WL_CONNECTED) ? WiFi.localIP().toString() : NOT_AVAILABLE);
-    str.replace(STATUS_AP_SSID, SOFTAP_SSID_NAME);
+    //str.replace(STATUS_AP_SSID, SOFTAP_SSID_NAME);
+    str.replace(STATUS_AP_SSID, deviceName);
     str.replace(STATUS_AP_IP_ADDRESS, WiFi.softAPIP().toString());
     str.replace(STATUS_LDR_VALUE, String(getLDRValue()));
     return str;

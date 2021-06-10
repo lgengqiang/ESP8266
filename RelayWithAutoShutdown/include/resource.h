@@ -1,6 +1,6 @@
 #include <Arduino.h>
 
-const String SOFTAP_SSID_NAME = "RelayCFG";
+//const String SOFTAP_SSID_NAME = "RelayCFG";
 
 const String RELAY_DEFAULT_NAME = "开关";
 const String NOT_AVAILABLE = "N/A";
