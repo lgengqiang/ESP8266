@@ -16,25 +16,26 @@
 #define LED_STATE_PIN LED_BUILTIN
 #define RELAY_PIN D5
 
+/* -------------------------------------------------- */
+
 unsigned long perviousMillis = 0;
 
 String deviceName;
 
 int relayState = RELAY_STATE_DEFAULT;
+
+/* -------------------------------------------------- */
+
 String ssidName;
 String ssidPassword;
 String relayDisplayName(RELAY_DEFAULT_NAME);
+
+/* -------------------------------------------------- */
+
 bool enableTurnOnThreshold = false;
 float turnOnThreshold = -1.0f;
 bool enableShutdownThreshold = false;
 float shutdownThreshold = -1.0f;
-
-// bool enableTurnOnTime = false;
-// int turnOnHour = -1;
-// int turnOnMinute = -1;
-// bool enableShutdownTime = false;
-// int shutdownHour = -1;
-// int shutdownMinute = -1;
 
 /* -------------------------------------------------- */
 
@@ -72,8 +73,12 @@ WiFiEventHandler onStationModeDisconnectedEvent;
 WiFiEventHandler onStationModeAuthModeChangedEvent;
 WiFiEventHandler onStationModeDHCPTimeoutEvent;
 
+/* -------------------------------------------------- */
+
 WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP, "cn.ntp.org.cn");
+
+/* -------------------------------------------------- */
 
 void serial_init(void);
 void button_init(void);
@@ -122,9 +127,12 @@ void makeTurnOnTime(void);
 void makeShutdownTime(void);
 bool isInTimeRange(time_t* from, time_t* to, time_t* cur);
 
+/* -------------------------------------------------- */
+
 void setup()
 {
     // put your setup code here, to run once:
+
     /* Peripherals */
     serial_init();
     button_init();
@@ -179,7 +187,6 @@ void setup()
 
     /* WIFI SoftAP */
     WiFi.softAPConfig(ipAddress, ipAddress, IPAddress(255, 255, 255, 0));
-    // WiFi.softAP(SOFTAP_SSID_NAME);
     WiFi.softAP(deviceName);
 
     /* WIFI Station */
@@ -265,124 +272,6 @@ void loop()
                 writeRelay(RELAY_STATE_OFF);
             }
         }
-/*
-        // Turn On
-        if (enableTurnOnThreshold && turnOnThreshold > 0.0f)
-        {
-            bool shouldTurnOn = (ldr <= turnOnThreshold);
-            if (enableTurnOnTime)
-            {
-                tm tm = {0};
-                tm.tm_hour = turnOnHour;
-                tm.tm_min = turnOnMinute;
-                time_t time = mktime(&tm);
-
-                if (timeNow < time)
-                {
-                    shouldTurnOn = false;
-                }
-            }
-
-            if (shouldTurnOn && (readRelay() == RELAY_STATE_OFF))
-            {
-                Serial.printf("Automatic Turn On\r\n");
-                writeRelay(RELAY_STATE_ON);
-            }
-        }
-
-        // Shutdown
-        if (enableShutdownThreshold && shutdownThreshold > 0.0f)
-        {
-            bool shouldShutdown = (ldr >= shutdownThreshold);
-
-            if (enableShutdownTime)
-            {
-                tm tm = {0};
-                tm.tm_hour = shutdownHour;
-                tm.tm_min = shutdownMinute;
-                time_t time = mktime(&tm);
-
-                if (timeNow < time)
-                {
-                    shouldShutdown = false;
-                }
-
-                if (shouldShutdown && (readRelay() == RELAY_STATE_ON))
-                {
-                    Serial.printf("Automatic Shutdown\r\n");
-                    writeRelay(RELAY_STATE_OFF);
-                }
-            }
-        }
-*/
-/*
-        if (enableTurnOnThreshold)
-        {
-            if (turnOnThreshold > 0.0f)
-            {
-                if (ldr <= turnOnThreshold)
-                {
-                    Serial.printf("Turn On by LDR.\r\n    LDR Value: %.2f;  Threshold: %.2f.\r\n", ldr, turnOnThreshold);
-                    writeRelay(RELAY_STATE_ON);
-                }
-            }
-        }
-
-        if (enableShutdownThreshold)
-        {
-            if (shutdownThreshold > 0.0f)
-            {
-                if (ldr >= shutdownThreshold)
-                {
-                    Serial.printf("Shutdown by LDR.\r\n    LDR Value: %.2f;  Threshold: %.2f.\r\n", ldr, shutdownThreshold);
-                    writeRelay(RELAY_STATE_OFF);
-                }
-            }
-        }
-
-        if (enableTurnOnTime || enableShutdownTime)
-        {
-            bool updateSuccessfully = timeClient.update();
-
-            if (updateSuccessfully)
-            {
-                Serial.printf("[Debug] NTP Time: %02d:%02d:%02d\r\n", timeClient.getHours(), timeClient.getMinutes(), timeClient.getSeconds());
-
-                tm now = {0};
-                now.tm_hour = timeClient.getHours();
-                now.tm_min = timeClient.getMinutes();
-                time_t timeNow = mktime(&now);
-
-                if (enableTurnOnTime)
-                {
-                    tm tm = {0};
-                    tm.tm_hour = turnOnHour;
-                    tm.tm_min = turnOnMinute;
-                    time_t time = mktime(&tm);
-
-                    if (timeNow >= time)
-                    {
-                        Serial.println("Turn On by Time");
-                        writeRelay(RELAY_STATE_ON);
-                    }
-                }
-
-                if (enableShutdownTime)
-                {
-                    tm tm = {0};
-                    tm.tm_hour = shutdownHour;
-                    tm.tm_min = shutdownMinute;
-                    time_t time = mktime(&tm);
-
-                    if (timeNow >= time)
-                    {
-                        Serial.println("Shutdown by Time");
-                        writeRelay(RELAY_STATE_OFF);
-                    }
-                }
-            }
-        }
-*/
     }
 }
 
@@ -485,12 +374,6 @@ bool loadWifiConfig(void)
     turnOnThreshold = doc["TurnOnThreshold"].as<float>();
     enableShutdownThreshold = doc["EnableShutdownThreshold"].as<bool>();
     shutdownThreshold = doc["ShutdownThreshold"].as<float>();
-    // enableTurnOnTime = doc["EnableTurnOnTime"].as<bool>();
-    // turnOnHour = doc["TurnOnHour"].as<int>();
-    // turnOnMinute = doc["TurnOnMinute"].as<int>();
-    // enableShutdownTime = doc["EnableShutdownTime"].as<bool>();
-    // shutdownHour = doc["ShutdownHour"].as<int>();
-    // shutdownMinute = doc["ShutdownMinute"].as<int>();
 
     enableTurnOnTimeRange = doc["EnableTurnOnTimeRange"].as<bool>();
     turnOnBeginHour = doc["TurnOnBeginHour"].as<int>();
@@ -510,14 +393,11 @@ bool loadWifiConfig(void)
     Serial.printf("    SSID: %s\r\n", ssidName.c_str());
     Serial.printf("    Password: %s\r\n", ssidPassword.c_str());
     Serial.printf("    RelayDisplayName: %s\r\n", relayDisplayName.c_str());
+
     Serial.printf("    EnableTurnOnThreshold: %s\r\n", enableTurnOnThreshold ? "True" : "False");
     Serial.printf("    TurnOnThreshold: %.2f\r\n", turnOnThreshold);
     Serial.printf("    EnableShutdownThreshold: %s\r\n", enableShutdownThreshold ? "True" : "False");
     Serial.printf("    ShutdownThreshold: %.2f\r\n", shutdownThreshold);
-    // Serial.printf("    EnableTurnOnTime: %s\r\n", enableTurnOnTime ? "True" : "False");
-    // Serial.printf("    TurnOnTime: %02d:%02d\r\n", turnOnHour, turnOnMinute);
-    // Serial.printf("    EnableShutdownTime: %s\r\n", enableShutdownTime ? "True" : "False");
-    // Serial.printf("    ShutdownTime: %02d:%02d\r\n", shutdownHour, shutdownMinute);
 
     Serial.printf("    EnableTurnOnTimeRange: %s\r\n", enableTurnOnTimeRange ? "True" : "False");
     Serial.printf("    Turn On Begin at %02d:%02d\r\n", turnOnBeginHour, turnOnBeginMinute);
@@ -549,16 +429,11 @@ bool saveWifiConfig(void)
     doc["SSID"] = ssidName;
     doc["Password"] = ssidPassword;
     doc["RelayDisplayName"] = relayDisplayName;
+
     doc["EnableTurnOnThreshold"] = enableTurnOnThreshold;
     doc["TurnOnThreshold"] = turnOnThreshold;
     doc["EnableShutdownThreshold"] = enableShutdownThreshold;
     doc["ShutdownThreshold"] = shutdownThreshold;
-    // doc["EnableTurnOnTime"] = enableTurnOnTime;
-    // doc["TurnOnHour"] = turnOnHour;
-    // doc["TurnOnMinute"] = turnOnMinute;
-    // doc["EnableShutdownTime"] = enableShutdownTime;
-    // doc["ShutdownHour"] = shutdownHour;
-    // doc["ShutdownMinute"] = shutdownMinute;
 
     doc["EnableTurnOnTimeRange"] = enableTurnOnTimeRange;
     doc["TurnOnBeginHour"] = turnOnBeginHour;
@@ -613,32 +488,6 @@ void onConfigApplyPage(void)
     turnOnThreshold = webserver.arg("TurnOnThreshold").toFloat();
     enableShutdownThreshold = webserver.arg("EnableShutdownThreshold") == "on" ? true : false;
     shutdownThreshold = webserver.arg("ShutdownThreshold").toFloat();
-
-    // if (webserver.arg("TurnOnTime").length() == 5)
-    // {
-    //     enableTurnOnTime = webserver.arg("EnableTurnOnTime") == "on" ? true : false;
-    //     turnOnHour = webserver.arg("TurnOnTime").substring(0, 2).toInt();
-    //     turnOnMinute = webserver.arg("TurnOnTime").substring(3, 5).toInt();
-    // }
-    // else
-    // {
-    //     enableTurnOnTime = false;
-    //     turnOnHour = -1;
-    //     turnOnMinute = -1;
-    // }
-
-    // if (webserver.arg("ShutdownTime").length() == 5)
-    // {
-    //     enableShutdownTime = webserver.arg("EnableShutdownTime") == "on" ? true : false;
-    //     shutdownHour = webserver.arg("ShutdownTime").substring(0, 2).toInt();
-    //     shutdownMinute = webserver.arg("ShutdownTime").substring(3, 5).toInt();
-    // }
-    // else
-    // {
-    //     enableShutdownTime = false;
-    //     shutdownHour = -1;
-    //     shutdownMinute = -1;
-    // }
 
     /*
      * EnableTurnOnTimeRange
@@ -696,9 +545,6 @@ void onConfigApplyPage(void)
     Serial.printf("[WebServer] Turn On Threshold: %s, %.2f\r\n", enableTurnOnThreshold ? "True" : "False", turnOnThreshold);
     Serial.printf("[WebServer] Shutdown Threshold: %s, %.2f\r\n", enableShutdownThreshold ? "True" : "False", shutdownThreshold);
 
-    // Serial.printf("[WebServer] Turn On Time: %s, %02d:%02d\r\n", enableTurnOnTime ? "True" : "False", turnOnHour, turnOnMinute);
-    // Serial.printf("[WebServer] Shutdown Time: %s, %02d:%02d\r\n", enableShutdownTime ? "True" : "False", shutdownHour, shutdownMinute);
-
     Serial.printf("[WebServer] Turn On by Time: %s; From %02d:%02d to %02d:%02d\r\n", enableTurnOnTimeRange ? "True" : "False", turnOnBeginHour, turnOnBeginMinute, turnOnEndHour, turnOnEndMinute);
     Serial.printf("[WebServer] Shutdown by Time: %s; From %02d:%02d to %02d:%02d\r\n", enableShutdownTimeRange ? "True" : "False", shutdownBeginHour, shutdownBeginMinute, shutdownEndHour, shutdownEndMinute);
 
@@ -749,7 +595,6 @@ String buildStatusPageHtml(void)
     str.replace(STATUS_STA_STATUS, getStatusString());
     str.replace(STATUS_SSID_NAME, (WiFi.status() == WL_CONNECTED) ? WiFi.SSID() : NOT_AVAILABLE);
     str.replace(STATUS_STA_IP_ADDRESS, (WiFi.status() == WL_CONNECTED) ? WiFi.localIP().toString() : NOT_AVAILABLE);
-    //str.replace(STATUS_AP_SSID, SOFTAP_SSID_NAME);
     str.replace(STATUS_AP_SSID, deviceName);
     str.replace(STATUS_AP_IP_ADDRESS, WiFi.softAPIP().toString());
     str.replace(STATUS_LDR_VALUE, String(getLDRValue()));
