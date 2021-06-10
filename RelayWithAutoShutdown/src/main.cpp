@@ -14,7 +14,7 @@
 
 #define BUTTON_PIN D3
 #define LED_STATE_PIN LED_BUILTIN
-#define RELAY_PIN D5
+#define RELAY_PIN D1
 
 /* -------------------------------------------------- */
 
@@ -208,7 +208,7 @@ void loop()
     webserver.handleClient();
 
     unsigned long currentMillis = millis();
-    if ((currentMillis - perviousMillis) > 10000L)
+    if ((currentMillis - perviousMillis) > 30000L)
     {
         perviousMillis = currentMillis;
 
