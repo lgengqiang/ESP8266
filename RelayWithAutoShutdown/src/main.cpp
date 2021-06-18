@@ -1,12 +1,13 @@
 #include <Arduino.h>
-#include "ESP8266WebServer.h"
-#include "ESP8266WiFi.h"
-#include "FS.h"
-#include "LittleFS.h"
-#include "resource.h"
-#include "ArduinoJson.h"
-#include "WiFiUdp.h"
-#include "NTPClient.h"
+#include <ESP8266WiFi.h>
+#include <ESP8266WebServer.h>
+#include <ESP8266HTTPUpdateServer.h>
+#include <FS.h>
+#include <LittleFS.h>
+#include <resource.h>
+#include <ArduinoJson.h>
+#include <WiFiUdp.h>
+#include <NTPClient.h>
 
 #define RELAY_STATE_OFF 0
 #define RELAY_STATE_ON 1
@@ -62,6 +63,8 @@ time_t shutdownEndTime = 0;
 /* -------------------------------------------------- */
 
 ESP8266WebServer webserver;
+
+ESP8266HTTPUpdateServer httpUpdateServer;
 
 IPAddress ipAddress(192, 168, 10, 1);
 
@@ -159,6 +162,9 @@ void setup()
         /* WIFI does not been configured */
         Serial.println("[Setup] Load configuration failed.");
     }
+
+    /* HTTP Update Server */
+    httpUpdateServer.setup(&webserver);
 
     /* Web Server */
     webserver.begin(80);
@@ -277,7 +283,7 @@ void loop()
 
 void serial_init(void)
 {
-    Serial.begin(9600);
+    Serial.begin(115200);
 }
 
 void button_init(void)
